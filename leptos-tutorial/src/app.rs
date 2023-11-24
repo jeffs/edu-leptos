@@ -1,5 +1,7 @@
 use leptos::{component, create_signal, logging::log, view, IntoView, SignalUpdate, SignalWith};
 
+const GOAL: u32 = 8;
+
 fn next_random(seed: u32) -> u32 {
     // https://stackoverflow.com/a/3062783/3116635
     1103515245u32.wrapping_mul(seed).wrapping_add(12345)
@@ -26,8 +28,10 @@ pub fn App() -> impl IntoView {
     let (pos, set_pos) = create_signal(Position::default());
 
     view! {
-        <main>
-            <progress max="50" value=count />
+        <main
+            class:won={move || count() >= GOAL}
+        >
+            <progress max=GOAL value=count />
             <button
                 class:red=move || count() % 2 == 1
                 style:top={move || pos.with(|r| format!("{}vh", r.top))}
@@ -35,13 +39,13 @@ pub fn App() -> impl IntoView {
                 on:click=move |_| {
                     set_count.update(|n| *n += 1);
                     set_pos.update(|p| p.advance());
-                    pos.with(|p| log!("{p:?}"))
+                    pos.with(|p| log!("{p:?}"));
                 }
             >
                 "Click me: "
                 {count}
             </button>
+            <footer>{move || pos.with(|r| format!("{r:?}"))}</footer>
         </main>
-        <footer>{move || pos.with(|r| format!("{r:?}"))}</footer>
     }
 }

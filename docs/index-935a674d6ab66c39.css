@@ -22,6 +22,12 @@ body {
 main {
   display: flex;
   flex-direction: column;
+  height: 100%;
+}
+
+/* Style for when the player has won the game. */
+main.won {
+  background-color: rgb(13, 40, 13);
 }
 
 button {
@@ -32,7 +38,5 @@ button {
 
 footer {
   margin-top: auto;
-  /* position: fixed;
-  height: 50px;
-  top: calc(100% - 50px); */
+  z-index: 1;
 }
