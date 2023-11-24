@@ -1,3 +1,31 @@
+/* https://andy-bell.co.uk/a-modern-css-reset/ */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+}
+
+.red {
+  color: red;
+}
+
+html,
 body {
   background-color: #333;
+  color: #ccc;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+button {
+  position: relative;
+}
+
+footer {
+  margin-top: auto;
+  /* position: fixed;
+  height: 50px;
+  top: calc(100% - 50px); */
 }
