@@ -56,10 +56,12 @@ tr.sum {
 
 td {
   text-align: center;
+  width: 3rem;
 }
 
 th {
   text-align: right;
+  width: 2rem;
 }
 
 footer {
