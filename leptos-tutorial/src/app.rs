@@ -15,8 +15,8 @@ struct Position {
 impl Position {
     fn advance(&mut self) {
         self.seed = next_random(self.seed);
-        self.top = self.seed / 256 % 90;
-        self.left = self.seed % 90;
+        self.top = self.seed / 256 % 90; // % of viewport height
+        self.left = self.seed % 90; // % of viewport width
     }
 }
 
@@ -27,6 +27,7 @@ pub fn App() -> impl IntoView {
 
     view! {
         <main>
+            <progress max="50" value=count />
             <button
                 class:red=move || count() % 2 == 1
                 style:top={move || pos.with(|r| format!("{}vh", r.top))}
