@@ -30,7 +30,11 @@ main.won {
   background-color: rgb(13, 40, 13);
 }
 
-button {
+button.plus {
+  margin-right: auto;
+}
+
+button.tile {
   position: relative;
   height: 8em;
   width: 8em;
