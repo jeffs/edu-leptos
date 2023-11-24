@@ -28,14 +28,14 @@ pub fn App() -> impl IntoView {
     view! {
         <main>
             <button
+                class:red=move || count() % 2 == 1
+                style:top={move || pos.with(|r| format!("{}vh", r.top))}
+                style:left={move || pos.with(|r| format!("{}vw", r.left))}
                 on:click=move |_| {
                     set_count.update(|n| *n += 1);
                     set_pos.update(|p| p.advance());
                     pos.with(|p| log!("{p:?}"))
                 }
-                style:top={move || pos.with(|r| format!("{}vh", r.top))}
-                style:left={move || pos.with(|r| format!("{}vw", r.left))}
-                class:red=move || count() % 2 == 1
             >
                 "Click me: "
                 {count}
