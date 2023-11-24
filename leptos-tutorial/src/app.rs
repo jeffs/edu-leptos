@@ -1,6 +1,4 @@
-use leptos::{
-    component, create_signal, logging::log, view, IntoView, Signal, SignalUpdate, SignalWith,
-};
+use leptos::{component, create_signal, logging::log, view, IntoView, SignalUpdate, SignalWith};
 
 const GOAL: i32 = 8;
 
@@ -24,10 +22,13 @@ impl Position {
     }
 }
 
+/// Shows progress toward a goal.
 #[component]
-fn ProgressBar(
+fn ProgressBar<F: Fn() -> i32 + 'static>(
+    /// The maximum goal.
     #[prop(default = GOAL as u16)] max: u16,
-    #[prop(into)] progress: Signal<i32>,
+    /// How much progress should be shown.
+    progress: F,
 ) -> impl IntoView {
     view! {
         <progress
@@ -49,7 +50,7 @@ pub fn App() -> impl IntoView {
             class:won={move || count() >= GOAL}
         >
             <ProgressBar progress=count />
-            <ProgressBar progress=Signal::derive(double_count) />
+            <ProgressBar progress=double_count />
             <button
                 class:red=move || count() % 2 == 1
                 style:top={move || pos.with(|r| format!("{}vh", r.top))}
