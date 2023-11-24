@@ -20,8 +20,8 @@ struct Position {
 impl Position {
     fn advance(&mut self) {
         self.seed = next_random(self.seed);
-        self.top = self.seed / 256 % 90; // % of viewport height
-        self.left = self.seed % 90; // % of viewport width
+        self.top = self.seed / 256 % 90;
+        self.left = self.seed % 90;
     }
 }
 
@@ -75,28 +75,32 @@ fn DynamicList() -> impl IntoView {
                 set_sum.update(|sum_| *sum_ += 1);
             };
             view! {
-                <li value={id}>
-                    <button on:click=remove(id)>-</button>
-                    <button on:click=increment>{counter}</button>
-                </li>
+                <tr>
+                    <th>{id}.</th>
+                    <td><button on:click=remove(id)>-</button></td>
+                    <td><button on:click=increment>{counter}</button></td>
+                </tr>
             }
         };
 
     view! {
-        <button class="plus" on:click=append>+</button>
-        <ol>
+        <table>
             <For
                 each=counters
                 key=|counter| counter.0
                 children=render
             />
-        </ol>
-        {sum}
+            <tr class="sum">
+                <th></th>
+                <td><button class="plus" on:click=append>+</button></td>
+                <td>{sum}</td>
+            </tr>
+        </table>
     }
 }
 
 #[component]
-pub fn App() -> impl IntoView {
+pub fn Game() -> impl IntoView {
     let (count, set_count) = create_signal(0);
     let (pos, set_pos) = create_signal(Position::default());
 
@@ -109,8 +113,8 @@ pub fn App() -> impl IntoView {
             <button
                 class="tile"
                 class:red=move || count() % 2 == 1
-                style:top={move || pos.with(|r| format!("{}vh", r.top))}
-                style:left={move || pos.with(|r| format!("{}vw", r.left))}
+                style:top={move || pos.with(|r| format!("{}%", r.top))}
+                style:left={move || pos.with(|r| format!("{}%", r.left))}
                 on:click=move |_| {
                     set_count.update(|n| *n += 1);
                     set_pos.update(|p| p.advance());
@@ -119,8 +123,15 @@ pub fn App() -> impl IntoView {
             >
                 "Click me: " {count}
             </button>
-            <DynamicList />
             <footer>{move || pos.with(|r| format!("{r:?}"))}</footer>
         </main>
+    }
+}
+
+#[component]
+pub fn App() -> impl IntoView {
+    view! {
+        <DynamicList />
+        <Game />
     }
 }
