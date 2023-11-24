@@ -19,8 +19,15 @@ body {
   flex-direction: column;
 }
 
+main {
+  display: flex;
+  flex-direction: column;
+}
+
 button {
   position: relative;
+  height: 8em;
+  width: 8em;
 }
 
 footer {
