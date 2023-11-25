@@ -27,3 +27,9 @@ git push -fu origin dist
 # Clean up.
 git branch -d dist-parent
 git checkout "$source_branch"
+
+echo <<EOF
+For progress and deployment, see:
+https://github.com/jeffs/edu-leptos/deployments
+https://jeffs.github.io/edu-leptos/
+EOF
