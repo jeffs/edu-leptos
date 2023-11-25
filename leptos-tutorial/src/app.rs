@@ -50,17 +50,17 @@ fn DynamicList() -> impl IntoView {
     let (sum, set_sum) = create_signal(0);
 
     let append = move |_| {
-        set_counters.update(|v| {
+        set_counters.update(|counters| {
             last_counter_id += 1;
-            v.push((last_counter_id, create_signal(0)));
+            counters.push((last_counter_id, create_signal(0)));
         });
     };
 
     let remove = move |id| {
         move |_| {
-            set_counters.update(|counters_| counters_.retain(|(id_, _)| *id_ != id));
-            set_sum.update(|sum_| {
-                *sum_ = counters()
+            set_counters.update(|counters| counters.retain(|counter| counter.0 != id));
+            set_sum.update(|sum| {
+                *sum = counters()
                     .into_iter()
                     .map(|(_, (counter, _))| counter())
                     .sum();
