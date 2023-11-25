@@ -13,7 +13,11 @@ fn next_random(seed: u32) -> u32 {
 #[derive(Debug, Default)]
 struct Position {
     seed: u32,
+
+    /// Percent < 90, so as to always be well within the parent element.
     top: u32,
+
+    /// Percent < 90, so as to always be well within the parent element.
     left: u32,
 }
 
@@ -102,7 +106,7 @@ fn DynamicList() -> impl IntoView {
 #[component]
 pub fn Game() -> impl IntoView {
     let (count, set_count) = create_signal(0);
-    let (pos, set_pos) = create_signal(Position::default());
+    let (position, set_position) = create_signal(Position::default());
 
     let double_count = move || count() * 2;
 
@@ -113,17 +117,17 @@ pub fn Game() -> impl IntoView {
             <button
                 class="tile"
                 class:red=move || count() % 2 == 1
-                style:top={move || pos.with(|r| format!("{}%", r.top))}
-                style:left={move || pos.with(|r| format!("{}%", r.left))}
+                style:top={move || position.with(|percent| format!("{}%", percent.top))}
+                style:left={move || position.with(|percent| format!("{}%", percent.left))}
                 on:click=move |_| {
-                    set_count.update(|n| *n += 1);
-                    set_pos.update(|p| p.advance());
-                    pos.with(|p| log!("{p:?}"));
+                    set_count.update(|count| *count += 1);
+                    set_position.update(Position::advance);
+                    position.with(|position| log!("{position:?}"));
                 }
             >
                 "Click me: " {count}
             </button>
-            <footer>{move || pos.with(|r| format!("{r:?}"))}</footer>
+            <footer>{move || position.with(|r| format!("{r:?}"))}</footer>
         </main>
     }
 }
