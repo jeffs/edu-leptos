@@ -6,6 +6,10 @@
   margin: 0;
 }
 
+:root {
+  --gap: 4px;
+}
+
 .red {
   color: red;
 }
@@ -22,7 +26,7 @@ body {
 main {
   display: flex;
   flex-direction: column;
-  height: 100%;
+  flex: 1;
 }
 
 /* Style for when the player has won the game. */
@@ -30,13 +34,38 @@ main.won {
   background-color: rgb(13, 40, 13);
 }
 
-button {
+button.plus {
+  margin-right: auto;
+}
+
+button.tile {
   position: relative;
-  height: 8em;
-  width: 8em;
+  height: 8rem;
+  width: 8rem;
+}
+
+table {
+  border: solid;
+  border-collapse: collapse;
+  width: 8rem;
+}
+
+tr.sum {
+  border-top: solid;
+}
+
+td {
+  text-align: center;
+  width: 3rem;
+}
+
+th {
+  text-align: right;
+  width: 2rem;
 }
 
 footer {
   margin-top: auto;
+  margin-right: auto;
   z-index: 1;
 }
