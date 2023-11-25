@@ -13,15 +13,29 @@ fn next_random(seed: u32) -> u32 {
 #[derive(Debug, Default)]
 struct Position {
     seed: u32,
-    top: u32,
-    left: u32,
+    top_percent: u32,
+    left_percent: u32,
 }
 
 impl Position {
     fn advance(&mut self) {
+        // Use the bottom two bytes to compute the top and left values.
+        const MASK: u32 = (1 << u8::BITS) - 1;
+
+        // Ensure that our position remains within the parent element.
+        const STOP: u32 = 90;
+
         self.seed = next_random(self.seed);
-        self.top = self.seed / 256 % 90;
-        self.left = self.seed % 90;
+        self.top_percent = (self.seed & MASK) % STOP;
+        self.left_percent = ((self.seed >> u8::BITS) & MASK) % STOP;
+    }
+
+    fn format_top(&self) -> String {
+        format!("{}%", self.top_percent)
+    }
+
+    fn format_left(&self) -> String {
+        format!("{}%", self.left_percent)
     }
 }
 
@@ -102,28 +116,25 @@ fn DynamicList() -> impl IntoView {
 #[component]
 pub fn Game() -> impl IntoView {
     let (count, set_count) = create_signal(0);
-    let (pos, set_pos) = create_signal(Position::default());
-
-    let double_count = move || count() * 2;
+    let (position, set_position) = create_signal(Position::default());
 
     view! {
         <main class:won={move || count() >= GOAL}>
             <ProgressBar progress=count />
-            <ProgressBar progress=double_count />
             <button
                 class="tile"
                 class:red=move || count() % 2 == 1
-                style:top={move || pos.with(|r| format!("{}%", r.top))}
-                style:left={move || pos.with(|r| format!("{}%", r.left))}
+                style:top={move || position.with(Position::format_top)}
+                style:left={move || position.with(Position::format_left)}
                 on:click=move |_| {
-                    set_count.update(|n| *n += 1);
-                    set_pos.update(|p| p.advance());
-                    pos.with(|p| log!("{p:?}"));
+                    set_count.update(|count| *count += 1);
+                    set_position.update(Position::advance);
+                    position.with(|position| log!("{position:?}"));
                 }
             >
                 "Click me: " {count}
             </button>
-            <footer>{move || pos.with(|r| format!("{r:?}"))}</footer>
+            <footer>{move || position.with(|r| format!("{r:?}"))}</footer>
         </main>
     }
 }
@@ -131,7 +142,7 @@ pub fn Game() -> impl IntoView {
 #[component]
 pub fn App() -> impl IntoView {
     view! {
-        <DynamicList />
         <Game />
+        <DynamicList />
     }
 }
