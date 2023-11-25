@@ -13,19 +13,29 @@ fn next_random(seed: u32) -> u32 {
 #[derive(Debug, Default)]
 struct Position {
     seed: u32,
-
-    /// Percent < 90, so as to always be well within the parent element.
-    top: u32,
-
-    /// Percent < 90, so as to always be well within the parent element.
-    left: u32,
+    top_percent: u32,
+    left_percent: u32,
 }
 
 impl Position {
     fn advance(&mut self) {
+        // Use the bottom two bytes to compute the top and left values.
+        const MASK: u32 = (1 << u8::BITS) - 1;
+
+        // Ensure that our position remains within the parent element.
+        const STOP: u32 = 90;
+
         self.seed = next_random(self.seed);
-        self.top = self.seed / 256 % 90;
-        self.left = self.seed % 90;
+        self.top_percent = (self.seed & MASK) % STOP;
+        self.left_percent = ((self.seed >> u8::BITS) & MASK) % STOP;
+    }
+
+    fn format_top(&self) -> String {
+        format!("{}%", self.top_percent)
+    }
+
+    fn format_left(&self) -> String {
+        format!("{}%", self.left_percent)
     }
 }
 
@@ -117,8 +127,8 @@ pub fn Game() -> impl IntoView {
             <button
                 class="tile"
                 class:red=move || count() % 2 == 1
-                style:top={move || position.with(|percent| format!("{}%", percent.top))}
-                style:left={move || position.with(|percent| format!("{}%", percent.left))}
+                style:top={move || position.with(Position::format_top)}
+                style:left={move || position.with(Position::format_left)}
                 on:click=move |_| {
                     set_count.update(|count| *count += 1);
                     set_position.update(Position::advance);
