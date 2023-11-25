@@ -118,12 +118,9 @@ pub fn Game() -> impl IntoView {
     let (count, set_count) = create_signal(0);
     let (position, set_position) = create_signal(Position::default());
 
-    let double_count = move || count() * 2;
-
     view! {
         <main class:won={move || count() >= GOAL}>
             <ProgressBar progress=count />
-            <ProgressBar progress=double_count />
             <button
                 class="tile"
                 class:red=move || count() % 2 == 1
@@ -145,7 +142,7 @@ pub fn Game() -> impl IntoView {
 #[component]
 pub fn App() -> impl IntoView {
     view! {
-        <DynamicList />
         <Game />
+        <DynamicList />
     }
 }
