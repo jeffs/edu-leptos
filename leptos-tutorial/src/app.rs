@@ -1,52 +1,32 @@
-use leptos::{component, view, IntoView};
-use leptos::{prelude::*, CollectView};
-
-#[component]
-fn ProgressBar(
-    #[prop(default = 100)] max: u16,
-    #[prop(into, default = Signal::derive(|| 42))] progress: Signal<i32>,
-) -> impl IntoView {
-    view! { <progress max=max value=progress></progress> }
-}
+use leptos::prelude::*;
+use leptos::{component, event_target_value, view, IntoView};
 
 #[component]
 pub fn App() -> impl IntoView {
-    let (count, set_count) = create_signal(0);
+    let (input, set_input) = create_signal(String::new());
 
-    let double_count = move || count() * 2;
+    let (answer, set_answer) = create_signal(None);
 
-    let html = "<p>This HTML will be injected.</p>";
-
-    let values = vec!["hello", "world"];
-
-    let length = 5;
-    let counters = (1..=length).map(|i| create_signal(i));
-    let counter_buttons = counters
-        .map(|(count, set_count)| {
-            view! {
-                <li>
-                    <button on:click=move |_| set_count.update(|n| *n += 1)>{count}</button>
-                </li>
+    let mut fibs: Vec<u64> = vec![0, 1];
+    let handle_input = move |event| {
+        let input_value = event_target_value(&event);
+        let answer = input_value.parse().ok().and_then(|index: usize| {
+            for _ in fibs.len()..=index.checked_add(1)? {
+                let n = fibs.len();
+                fibs.push(fibs[n - 2].checked_add(fibs[n - 1])?);
             }
-        })
-        .collect_view();
+            Some(fibs[index])
+        });
+
+        set_input(input_value.clone());
+        set_answer(answer);
+    };
 
     view! {
-        <button
-            class:red=move || count() % 2 == 1
-            on:click=move |_| {
-                set_count.update(|n| *n += 1);
-            }
-        >
-
-            "Click me: "
-            {count}
-        </button>
-        <ProgressBar progress=count/>
-        <ProgressBar/>
-        <ProgressBar progress=Signal::derive(double_count)/>
-        <div inner_html=html></div>
-        <ul>{values.into_iter().map(|s| view! { <li>{s}</li> }).collect::<Vec<_>>()}</ul>
-        <ul>{counter_buttons}</ul>
+        <input on:input=handle_input prop:value=input autofocus/>
+        "fib("
+        {input}
+        ") = "
+        {answer}
     }
 }
