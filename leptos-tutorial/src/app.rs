@@ -1,148 +1,53 @@
-use leptos::{
-    component, create_signal, logging::log, view, For, IntoView, ReadSignal, SignalUpdate,
-    SignalWith, WriteSignal,
-};
-
-const GOAL: i32 = 8;
-
-fn next_random(seed: u32) -> u32 {
-    // https://stackoverflow.com/a/3062783/3116635
-    1103515245u32.wrapping_mul(seed).wrapping_add(12345)
-}
-
-#[derive(Debug, Default)]
-struct Position {
-    seed: u32,
-    top_percent: u32,
-    left_percent: u32,
-}
-
-impl Position {
-    fn advance(&mut self) {
-        // Use the bottom two bytes to compute the top and left values.
-        const MASK: u32 = (1 << u8::BITS) - 1;
-
-        // Ensure that our position remains within the parent element.
-        const STOP: u32 = 90;
-
-        self.seed = next_random(self.seed);
-        self.top_percent = (self.seed & MASK) % STOP;
-        self.left_percent = ((self.seed >> u8::BITS) & MASK) % STOP;
-    }
-
-    fn format_top(&self) -> String {
-        format!("{}%", self.top_percent)
-    }
-
-    fn format_left(&self) -> String {
-        format!("{}%", self.left_percent)
-    }
-}
-
-/// Shows progress toward a goal.
-#[component]
-fn ProgressBar<F: Fn() -> i32 + 'static>(
-    /// The maximum goal.
-    #[prop(default = GOAL as u16)]
-    max: u16,
-    /// How much progress should be shown.
-    progress: F,
-) -> impl IntoView {
-    view! {
-        <progress
-            max=max
-            value=progress
-        />
-    }
-}
+use leptos::{component, event_target_value, view, CollectView, IntoView};
+use leptos::{prelude::*, ErrorBoundary};
 
 #[component]
-fn DynamicList() -> impl IntoView {
-    let initial_counters: Vec<_> = (1..=5).map(|id| (id, create_signal(0))).collect();
-    let mut last_counter_id = initial_counters.len();
-    let (counters, set_counters) = create_signal(initial_counters);
-    let (sum, set_sum) = create_signal(0);
+fn NumericInput() -> impl IntoView {
+    let (value, set_value) = create_signal(Ok(0));
 
-    let append = move |_| {
-        set_counters.update(|counters| {
-            last_counter_id += 1;
-            counters.push((last_counter_id, create_signal(0)));
-        });
-    };
-
-    let remove = move |id| {
-        move |_| {
-            set_counters.update(|counters| counters.retain(|counter| counter.0 != id));
-            set_sum.update(|sum| {
-                *sum = counters()
-                    .into_iter()
-                    .map(|(_, (counter, _))| counter())
-                    .sum();
-            });
+    // when input changes, try to parse a number from the input
+    let on_input = move |ev| {
+        let value = event_target_value(&ev);
+        if value.is_empty() {
+            set_value(Ok(0));
+        } else {
+            set_value(value.parse::<i32>());
         }
     };
 
-    let render =
-        move |(id, (counter, set_counter)): (usize, (ReadSignal<i32>, WriteSignal<i32>))| {
-            let increment = move |_| {
-                set_counter.update(|n| *n += 1);
-                set_sum.update(|sum_| *sum_ += 1);
-            };
-            view! {
-                <tr>
-                    <th>{id}.</th>
-                    <td><button on:click=remove(id)>-</button></td>
-                    <td><button on:click=increment>{counter}</button></td>
-                </tr>
-            }
-        };
-
     view! {
-        <table>
-            <For
-                each=counters
-                key=|counter| counter.0
-                children=render
-            />
-            <tr class="sum">
-                <th></th>
-                <td><button class="plus" on:click=append>+</button></td>
-                <td>{sum}</td>
-            </tr>
-        </table>
-    }
-}
+        <h1>"Error Handling"</h1>
+        <label>
+            "Type a number (or not!)" <input on:input=on_input/>
+            <ErrorBoundary fallback=|errors| {
+                view! {
+                    "Not a number.  Errors:"
+                    <ul>
 
-#[component]
-pub fn Game() -> impl IntoView {
-    let (count, set_count) = create_signal(0);
-    let (position, set_position) = create_signal(Position::default());
+                        {move || {
+                            errors
+                                .get()
+                                .into_iter()
+                                .map(|(_, err)| {
+                                    view! { <li>{err.to_string()}</li> }
+                                })
+                                .collect_view()
+                        }}
 
-    view! {
-        <main class:won={move || count() >= GOAL}>
-            <ProgressBar progress=count />
-            <button
-                class="tile"
-                class:red=move || count() % 2 == 1
-                style:top={move || position.with(Position::format_top)}
-                style:left={move || position.with(Position::format_left)}
-                on:click=move |_| {
-                    set_count.update(|count| *count += 1);
-                    set_position.update(Position::advance);
-                    position.with(|position| log!("{position:?}"));
+                    </ul>
                 }
-            >
-                "Click me: " {count}
-            </button>
-            <footer>{move || position.with(|r| format!("{r:?}"))}</footer>
-        </main>
+            }>
+                <p>"You entered " <strong>{value}</strong></p>
+            </ErrorBoundary>
+        </label>
     }
 }
 
 #[component]
 pub fn App() -> impl IntoView {
     view! {
-        <Game />
-        <DynamicList />
+        <main>
+            <NumericInput/>
+        </main>
     }
 }
