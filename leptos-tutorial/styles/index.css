@@ -21,14 +21,14 @@ body {
   height: 100%;
   width: 100%;
   display: flex;
+  gap: 1em;
 }
 
 main, label {
   display: flex;
   flex-direction: column;
-  flex: 1;
-  /* margin-left: auto; */
-  margin-right: auto;
-  align-items: start;
-  justify-content: start;
+}
+
+main {
+  gap: 1em;
 }

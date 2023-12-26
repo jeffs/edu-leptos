@@ -21,7 +21,7 @@ fn NumericInput() -> impl IntoView {
             "Type a number (or not!)" <input on:input=on_input/>
             <ErrorBoundary fallback=|errors| {
                 view! {
-                    "Not a number.  Errors:"
+                    <h2>"Oopsies:"</h2>
                     <ul>
 
                         {move || {
@@ -29,7 +29,7 @@ fn NumericInput() -> impl IntoView {
                                 .get()
                                 .into_iter()
                                 .map(|(_, err)| {
-                                    view! { <li>{err.to_string()}</li> }
+                                    view! { <li>{move || format!("{err:?}")}</li> }
                                 })
                                 .collect_view()
                         }}
