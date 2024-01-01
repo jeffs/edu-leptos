@@ -132,12 +132,12 @@ pub fn App() -> impl IntoView {
                 set_score.update(|score| *score += len_before - len_after);
                 if walls.is_empty() {
                     // Pair each new wall a unique ID based on generation and index.pus
-                    *walls = rng
-                        .next_walls()
-                        .into_iter()
-                        .enumerate()
-                        .map(|(index, wall)| (next_generation * WALL_COUNT + index, wall))
-                        .collect();
+                    walls.extend(
+                        rng.next_walls()
+                            .into_iter()
+                            .enumerate()
+                            .map(|(index, wall)| (next_generation * WALL_COUNT + index, wall)),
+                    );
                 }
             }
         });
