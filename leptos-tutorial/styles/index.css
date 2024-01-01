@@ -8,9 +8,19 @@
 
 :root {
   background-color: #333;
-  color: white; 
+  color: white;
+}
+
+.entity {
+  position: absolute;  
 }
 
 .mob {
   transition: 0.2s;
+  border: 2px solid silver;
+  box-shadow: 2px 2px 2px black;
+}
+
+.wall {
+  background-color: black;
 }
