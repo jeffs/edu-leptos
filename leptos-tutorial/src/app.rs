@@ -1,5 +1,5 @@
 use leptos::{
-    component, create_signal, ev::KeyboardEvent, view, CollectView, IntoView, SignalUpdate,
+    component, create_signal, ev::KeyboardEvent, view, For, IntoView, SignalSet, SignalUpdate,
 };
 
 const SCALE: u32 = 10;
@@ -10,16 +10,24 @@ const DUNGEON_HEIGHT: u32 = 40; // m
 const PLAYER_WIDTH: u32 = 1; // m
 const PLAYER_HEIGHT: u32 = 2; // m
 
-const WALL_WIDTH: u32 = 1; // m
-const WALL_HEIGHT: u32 = 2; // m
+const WALL_WIDTH: u32 = 2; // m
+const WALL_HEIGHT: u32 = 4; // m
+const WALL_COUNT: usize = 20;
 
-fn do_both<F: FnOnce(), G: FnOnce()>(f: F, g: G) {
-    f();
-    g();
+// Linear Congruential Generator of pseudo-random numbers.
+fn lcg(seed: u32) -> u32 {
+    // https://stackoverflow.com/a/3062783/3116635
+    1103515245u32.wrapping_mul(seed).wrapping_add(12345)
+}
+
+fn is_player_touching_wall(player: (u32, u32), wall: (u32, u32)) -> bool {
+    ((wall.0..wall.0 + WALL_WIDTH).contains(&player.0)
+        || (wall.0 + 1..wall.0 + WALL_WIDTH).contains(&(player.0 + PLAYER_WIDTH)))
+        && ((wall.1..wall.1 + WALL_HEIGHT).contains(&player.1)
+            || (wall.1 + 1..wall.1 + WALL_HEIGHT).contains(&(player.1 + PLAYER_HEIGHT)))
 }
 
 #[component]
-
 fn Wall(x: u32, y: u32) -> impl IntoView {
     view! {
         <div
@@ -27,7 +35,6 @@ fn Wall(x: u32, y: u32) -> impl IntoView {
            style:translate=move || format!("{}px {}px", x * SCALE, y * SCALE)
            style:width=format!("{}px", WALL_WIDTH * SCALE)
            style:height=format!("{}px", WALL_HEIGHT * SCALE)
-
         />
     }
 }
@@ -35,29 +42,45 @@ fn Wall(x: u32, y: u32) -> impl IntoView {
 #[component]
 pub fn App() -> impl IntoView {
     // Signals
+    //
+    // TODO: Remove walls if the player bumps into them.
     let (x, set_x) = create_signal((DUNGEON_WIDTH - PLAYER_WIDTH) / 2);
     let (y, set_y) = create_signal((DUNGEON_HEIGHT - PLAYER_HEIGHT) / 2);
 
-    // Walls (x, y)
-    //
-    // TODO: Remove walls if the player bumps into them.
-    let walls = [(8, 6), (7, 5), (3, 0)];
+    let mut walls = vec![];
+    let mut seed = 0;
+    for _ in 0..WALL_COUNT {
+        let x = lcg(seed);
+        seed = lcg(x);
+        walls.push((
+            x % (DUNGEON_WIDTH - WALL_WIDTH),
+            seed % (DUNGEON_HEIGHT - WALL_HEIGHT),
+        ));
+    }
 
-    // Handlers
-    let go_north = move || set_y.update(|y| *y -= 1);
-    let go_east = move || set_x.update(|x| *x += 1);
-    let go_south = move || set_y.update(|y| *y += 1);
-    let go_west = move || set_x.update(|x| *x -= 1);
-    let handle_keypress = move |ev: KeyboardEvent| match ev.key().as_str() {
-        "h" => go_west(),
-        "j" => go_south(),
-        "k" => go_north(),
-        "l" => go_east(),
-        "y" => do_both(go_north, go_west),
-        "u" => do_both(go_north, go_east),
-        "b" => do_both(go_south, go_west),
-        "n" => do_both(go_south, go_east),
-        _ => (),
+    let (walls, set_walls) = create_signal(walls);
+
+    let handle_keypress = move |ev: KeyboardEvent| {
+        let (mut x, mut y) = (x(), y());
+
+        match ev.key().as_str() {
+            "h" => x -= 1,
+            "j" => y += 1,
+            "k" => y -= 1,
+            "l" => x += 1,
+            "y" => (x, y) = (x - 1, y - 1),
+            "u" => (x, y) = (x + 1, y - 1),
+            "b" => (x, y) = (x - 1, y + 1),
+            "n" => (x, y) = (x + 1, y + 1),
+            _ => (),
+        }
+
+        set_x.set(x);
+        set_y.set(y);
+
+        set_walls.update(|walls| {
+            walls.retain(|&wall| !is_player_touching_wall((x, y), wall));
+        });
     };
 
     view! {
@@ -67,7 +90,15 @@ pub fn App() -> impl IntoView {
             style:height=format!("{}px", DUNGEON_HEIGHT * SCALE)
         >
             // Walls
-            {walls.into_iter().map(|(x, y)| view! { <Wall x y /> }).collect_view()}
+            // {walls.into_iter().map(|(x, y)| view! { <Wall x y /> }).collect_view()}
+
+            <For
+                each=walls
+                key=|wall| wall.clone()
+                let:child
+            >
+                <Wall x={child.0} y={child.1}/>
+            </For>
 
             // Player
             <div
