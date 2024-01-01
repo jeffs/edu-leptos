@@ -1,5 +1,6 @@
 use leptos::{
-    component, create_signal, ev::KeyboardEvent, view, For, IntoView, SignalSet, SignalUpdate,
+    component, create_signal, ev::KeyboardEvent, view, For, IntoView, ReadSignal, SignalSet,
+    SignalUpdate,
 };
 
 const SCALE: u32 = 10;
@@ -9,17 +10,19 @@ const DUNGEON_HEIGHT: u32 = 40; // m
 
 const PLAYER_WIDTH: u32 = 1; // m
 const PLAYER_HEIGHT: u32 = 2; // m
+const PLAYER_SPEED: u32 = 1; // m/s
 
 const WALL_WIDTH: u32 = 2; // m
 const WALL_HEIGHT: u32 = 4; // m
 const WALL_COUNT: usize = 20;
 
-// Linear Congruential Generator of pseudo-random numbers.
-fn lcg(seed: u32) -> u32 {
-    // https://stackoverflow.com/a/3062783/3116635
+/// Linear Congruential Generator (LCG).  See also:
+/// https://stackoverflow.com/a/3062783/3116635
+fn next_random(seed: u32) -> u32 {
     1103515245u32.wrapping_mul(seed).wrapping_add(12345)
 }
 
+/// Axis-Aligned Boundary Box (AABB) collision detector.
 fn is_player_touching_wall(player: (u32, u32), wall: (u32, u32)) -> bool {
     ((wall.0..wall.0 + WALL_WIDTH).contains(&player.0)
         || (wall.0 + 1..wall.0 + WALL_WIDTH).contains(&(player.0 + PLAYER_WIDTH)))
@@ -40,6 +43,18 @@ fn Wall(x: u32, y: u32) -> impl IntoView {
 }
 
 #[component]
+fn Player(x: ReadSignal<u32>, y: ReadSignal<u32>) -> impl IntoView {
+    view! {
+        <div
+            class="entity mob"
+            style:translate=move || format!("{}px {}px", x() * SCALE, y() * SCALE)
+            style:width=format!("{}px", PLAYER_WIDTH * SCALE)
+            style:height=format!("{}px", PLAYER_HEIGHT * SCALE)
+        />
+    }
+}
+
+#[component]
 pub fn App() -> impl IntoView {
     // Signals
     //
@@ -50,8 +65,8 @@ pub fn App() -> impl IntoView {
     let mut walls = vec![];
     let mut seed = 0;
     for _ in 0..WALL_COUNT {
-        let x = lcg(seed);
-        seed = lcg(x);
+        let x = next_random(seed);
+        seed = next_random(x);
         walls.push((
             x % (DUNGEON_WIDTH - WALL_WIDTH),
             seed % (DUNGEON_HEIGHT - WALL_HEIGHT),
@@ -64,14 +79,14 @@ pub fn App() -> impl IntoView {
         let (mut x, mut y) = (x(), y());
 
         match ev.key().as_str() {
-            "h" => x -= 1,
-            "j" => y += 1,
-            "k" => y -= 1,
-            "l" => x += 1,
-            "y" => (x, y) = (x - 1, y - 1),
-            "u" => (x, y) = (x + 1, y - 1),
-            "b" => (x, y) = (x - 1, y + 1),
-            "n" => (x, y) = (x + 1, y + 1),
+            "h" => x -= PLAYER_SPEED,
+            "j" => y += PLAYER_SPEED,
+            "k" => y -= PLAYER_SPEED,
+            "l" => x += PLAYER_SPEED,
+            "y" => (x, y) = (x - PLAYER_SPEED, y - PLAYER_SPEED),
+            "u" => (x, y) = (x + PLAYER_SPEED, y - PLAYER_SPEED),
+            "b" => (x, y) = (x - PLAYER_SPEED, y + PLAYER_SPEED),
+            "n" => (x, y) = (x + PLAYER_SPEED, y + PLAYER_SPEED),
             _ => (),
         }
 
@@ -88,10 +103,12 @@ pub fn App() -> impl IntoView {
             style:border="2px solid red"
             style:width=format!("{}px", DUNGEON_WIDTH * SCALE)
             style:height=format!("{}px", DUNGEON_HEIGHT * SCALE)
-        >
-            // Walls
-            // {walls.into_iter().map(|(x, y)| view! { <Wall x y /> }).collect_view()}
 
+            tabindex=0
+            autofocus=true
+            style:outline="none"
+            on:keypress=handle_keypress
+        >
             <For
                 each=walls
                 key=|wall| wall.clone()
@@ -100,20 +117,9 @@ pub fn App() -> impl IntoView {
                 <Wall x={child.0} y={child.1}/>
             </For>
 
-            // Player
-            <div
-                class="entity mob"
-                style:translate=move || format!("{}px {}px", x() * SCALE, y() * SCALE)
-                style:width=format!("{}px", PLAYER_WIDTH * SCALE)
-                style:height=format!("{}px", PLAYER_HEIGHT * SCALE)
+            <Player x y/>
 
-                tabindex=0
-                autofocus=true
-                // style:outline="none"
-                on:keypress=handle_keypress
-            />
-
-            <p style:position="fixed" style:bottom=0>{x} {y}</p>
+            <p>{move || walls().len()}</p>
         </main>
     }
 }
