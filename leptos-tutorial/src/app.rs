@@ -1,4 +1,4 @@
-use leptos::{component, event_target_value, view, CollectView, IntoView};
+use leptos::{component, event_target_value, view, CollectView, Errors, IntoView};
 use leptos::{prelude::*, ErrorBoundary};
 
 #[component]
@@ -15,28 +15,28 @@ fn NumericInput() -> impl IntoView {
         }
     };
 
+    let fallback_items = |errors: RwSignal<Errors>| {
+        errors()
+            .into_iter()
+            .map(|(_, err)| {
+                view! { <li>{move || format!("{err:?}")}</li> }
+            })
+            .collect_view()
+    };
+
+    let fallback = move |errors: RwSignal<Errors>| {
+        view! {
+            <h2>"Oopsies:"</h2>
+            <ul>{move || fallback_items(errors)}</ul>
+        }
+    };
+
     view! {
         <h1>"Error Handling"</h1>
         <label>
-            "Type a number (or not!)" <input on:input=on_input/>
-            <ErrorBoundary fallback=|errors| {
-                view! {
-                    <h2>"Oopsies:"</h2>
-                    <ul>
-
-                        {move || {
-                            errors
-                                .get()
-                                .into_iter()
-                                .map(|(_, err)| {
-                                    view! { <li>{move || format!("{err:?}")}</li> }
-                                })
-                                .collect_view()
-                        }}
-
-                    </ul>
-                }
-            }>
+            "Type a number (or not!)"
+            <input on:input=on_input/>
+            <ErrorBoundary fallback>
                 <p>"You entered " <strong>{value}</strong></p>
             </ErrorBoundary>
         </label>
