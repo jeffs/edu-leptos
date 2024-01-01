@@ -12,15 +12,8 @@
 }
 
 .entity {
-  position: absolute;  
-}
-
-.mob {
+  position: absolute;
   transition: 0.2s;
-  border: 2px solid silver;
-  box-shadow: 2px 2px 2px black;
-}
-
-.wall {
-  background-color: black;
+  
+  font-size: 20px;
 }

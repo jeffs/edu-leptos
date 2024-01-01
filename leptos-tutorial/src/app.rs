@@ -8,13 +8,13 @@ const SCALE: u32 = 10;
 const DUNGEON_WIDTH: u32 = 60; // m
 const DUNGEON_HEIGHT: u32 = 40; // m
 
-const PLAYER_WIDTH: u32 = 1; // m
+const PLAYER_WIDTH: u32 = 2; // m
 const PLAYER_HEIGHT: u32 = 2; // m
 const PLAYER_SPEED: u32 = 1; // m/s
 
 const WALL_WIDTH: u32 = 2; // m
-const WALL_HEIGHT: u32 = 4; // m
-const WALL_COUNT: usize = 4;
+const WALL_HEIGHT: u32 = 2; // m
+const WALL_COUNT: usize = 20;
 
 #[derive(Clone, Copy)]
 struct PlayerPos(u32, u32); // x, y
@@ -58,19 +58,21 @@ fn is_player_touching_wall(player: PlayerPos, wall: WallPos) -> bool {
 #[component]
 fn Wall(x: u32, y: u32) -> impl IntoView {
     view! {
-        <div
+        <span
            class="entity wall"
            style:translate=move || format!("{}px {}px", x * SCALE, y * SCALE)
            style:width=format!("{}px", WALL_WIDTH * SCALE)
            style:height=format!("{}px", WALL_HEIGHT * SCALE)
-        />
+        >
+            "🧱"
+        </span>
     }
 }
 
 #[component]
 fn Player(pos: ReadSignal<PlayerPos>) -> impl IntoView {
     view! {
-        <div
+        <span
             class="entity mob"
             style:translate=move || {
                 let PlayerPos(x, y) = pos();
@@ -78,7 +80,9 @@ fn Player(pos: ReadSignal<PlayerPos>) -> impl IntoView {
             }
             style:width=format!("{}px", PLAYER_WIDTH * SCALE)
             style:height=format!("{}px", PLAYER_HEIGHT * SCALE)
-        />
+        >
+            "🚜"
+        </span>
     }
 }
 
@@ -123,7 +127,7 @@ pub fn App() -> impl IntoView {
             if len_before > len_after {
                 set_score.update(|score| *score += len_before - len_after);
                 if walls.is_empty() {
-                    // Pair each new wall a unique ID based on generation and index.
+                    // Pair each new wall a unique ID based on generation and index.pus
                     *walls = rng
                         .next_walls()
                         .into_iter()
