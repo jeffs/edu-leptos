@@ -7,28 +7,10 @@
 }
 
 :root {
-  --gap: 4px;
-}
-
-.red {
-  color: red;
-}
-
-html,
-body {
   background-color: #333;
-  color: #ccc;
-  height: 100%;
-  width: 100%;
-  display: flex;
-  gap: 1em;
+  color: white; 
 }
 
-main, label {
-  display: flex;
-  flex-direction: column;
-}
-
-main {
-  gap: 1em;
+.mob {
+  transition: 0.2s;
 }

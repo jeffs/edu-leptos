@@ -1,53 +1,31 @@
-use leptos::{component, event_target_value, view, CollectView, Errors, IntoView};
-use leptos::{prelude::*, ErrorBoundary};
-
-#[component]
-fn NumericInput() -> impl IntoView {
-    let (value, set_value) = create_signal(Ok(0));
-
-    // when input changes, try to parse a number from the input
-    let on_input = move |ev| {
-        let value = event_target_value(&ev);
-        if value.is_empty() {
-            set_value(Ok(0));
-        } else {
-            set_value(value.parse::<i32>());
-        }
-    };
-
-    let fallback_items = |errors: RwSignal<Errors>| {
-        errors()
-            .into_iter()
-            .map(|(_, err)| {
-                view! { <li>{move || format!("{err:?}")}</li> }
-            })
-            .collect_view()
-    };
-
-    let fallback = move |errors: RwSignal<Errors>| {
-        view! {
-            <h2>"Oopsies:"</h2>
-            <ul>{move || fallback_items(errors)}</ul>
-        }
-    };
-
-    view! {
-        <h1>"Error Handling"</h1>
-        <label>
-            "Type a number (or not!)"
-            <input on:input=on_input/>
-            <ErrorBoundary fallback>
-                <p>"You entered " <strong>{value}</strong></p>
-            </ErrorBoundary>
-        </label>
-    }
-}
+use leptos::{component, create_signal, view, IntoView, SignalUpdate};
 
 #[component]
 pub fn App() -> impl IntoView {
+    let (count, set_count) = create_signal(0u32);
+
     view! {
-        <main>
-            <NumericInput/>
+        <main
+            style:border="2px solid red"
+            style:width="600px"
+            style:height="400px"
+
+            on:click=move |_| set_count.update(|count| *count += 1)
+        >
+            <div
+                class="mob"
+
+                style:position="absolute"
+                style:translate=move || format!("{0}px {0}px", count() * 10)
+
+                style:border="2px solid silver"
+                style:box-shadow="6px 6px 6px black"
+
+                style:width="100px"
+                style:height="100px"
+            />
+
+            <p style:position="fixed" style:bottom=0>{count}</p>
         </main>
     }
 }
