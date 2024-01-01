@@ -1,6 +1,6 @@
 use leptos::{
     component, create_signal, ev::KeyboardEvent, view, For, IntoView, ReadSignal, SignalSet,
-    SignalUpdate,
+    SignalUpdate, WriteSignal,
 };
 
 const SCALE: u32 = 10;
@@ -16,7 +16,7 @@ const WALL_WIDTH: u32 = 2; // m
 const WALL_HEIGHT: u32 = 2; // m
 const WALL_COUNT: usize = 20;
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq)]
 struct PlayerPos(u32, u32); // x, y
 
 #[derive(Clone, Copy)]
@@ -55,6 +55,50 @@ fn is_player_touching_wall(player: PlayerPos, wall: WallPos) -> bool {
             || (wall.1 + 1..wall.1 + WALL_HEIGHT).contains(&(player.1 + PLAYER_HEIGHT)))
 }
 
+fn update_position(pos: PlayerPos, ev: KeyboardEvent) -> PlayerPos {
+    let PlayerPos(x0, y0) = pos;
+    let key = ev.key();
+    let x1 = match key.as_str() {
+        "h" | "y" | "b" => x0.saturating_sub(PLAYER_SPEED),
+        "l" | "u" | "n" => (x0 + PLAYER_SPEED).min(DUNGEON_WIDTH - PLAYER_WIDTH),
+        _ => x0,
+    };
+    let y1 = match key.as_str() {
+        "k" | "y" | "u" => y0.saturating_sub(PLAYER_SPEED),
+        "j" | "b" | "n" => (y0 + PLAYER_SPEED).min(DUNGEON_HEIGHT - PLAYER_HEIGHT),
+        _ => y0,
+    };
+    PlayerPos(x1, y1)
+}
+
+fn update_walls_and_score(
+    set_walls: WriteSignal<Vec<(usize, WallPos)>>,
+    set_score: WriteSignal<usize>,
+    pos: PlayerPos,
+    rng: &mut Random,
+) {
+    set_walls.update(|walls| {
+        debug_assert!(!walls.is_empty());
+        let next_generation = walls[0].0 / WALL_COUNT + 1;
+        let len_before = walls.len();
+        walls.retain(|&(_, wall)| !is_player_touching_wall(pos, wall));
+        if walls.len() == len_before {
+            return;
+        }
+        set_score.update(|score| *score += len_before - walls.len());
+        if !walls.is_empty() {
+            return;
+        }
+        // Pair each new wall a unique ID based on generation and index.
+        let new_walls = rng
+            .next_walls()
+            .into_iter()
+            .enumerate()
+            .map(|(index, wall)| (next_generation * WALL_COUNT + index, wall));
+        walls.extend(new_walls);
+    });
+}
+
 #[component]
 fn Wall(x: u32, y: u32) -> impl IntoView {
     view! {
@@ -88,59 +132,26 @@ fn Player(pos: ReadSignal<PlayerPos>) -> impl IntoView {
 
 #[component]
 pub fn App() -> impl IntoView {
-    let mut rng = Random::default();
-
     let (player, set_player) = create_signal(PlayerPos(
         (DUNGEON_WIDTH - PLAYER_WIDTH) / 2,
         (DUNGEON_HEIGHT - PLAYER_HEIGHT) / 2,
     ));
 
     // Pair each wall with its initial index, for use as a unique ID.
+    let mut rng = Random::default();
     let walls: Vec<(usize, WallPos)> = rng.next_walls().into_iter().enumerate().collect();
     let (walls, set_walls) = create_signal(walls);
 
     let (score, set_score) = create_signal(0);
 
     let handle_keypress = move |ev: KeyboardEvent| {
-        let PlayerPos(x0, y0) = player();
-
-        let key = ev.key();
-        let x1 = match key.as_str() {
-            "h" | "y" | "b" => x0.saturating_sub(PLAYER_SPEED),
-            "l" | "u" | "n" => (x0 + PLAYER_SPEED).min(DUNGEON_WIDTH - PLAYER_WIDTH),
-            _ => x0,
-        };
-        let y1 = match key.as_str() {
-            "k" | "y" | "u" => y0.saturating_sub(PLAYER_SPEED),
-            "j" | "b" | "n" => (y0 + PLAYER_SPEED).min(DUNGEON_HEIGHT - PLAYER_HEIGHT),
-            _ => y0,
-        };
-
-        if (x0, y0) == (x1, y1) {
+        let pos0 = player();
+        let pos1 = update_position(pos0, ev);
+        if pos0 == pos1 {
             return;
         }
-
-        let pos = PlayerPos(x1, y1);
-        set_player.set(pos);
-        set_walls.update(|walls| {
-            debug_assert!(!walls.is_empty());
-            let next_generation = walls[0].0 / WALL_COUNT + 1;
-            let len_before = walls.len();
-            walls.retain(|&(_, wall)| !is_player_touching_wall(pos, wall));
-            let len_after = walls.len();
-            if len_before > len_after {
-                set_score.update(|score| *score += len_before - len_after);
-                if walls.is_empty() {
-                    // Pair each new wall a unique ID based on generation and index.pus
-                    walls.extend(
-                        rng.next_walls()
-                            .into_iter()
-                            .enumerate()
-                            .map(|(index, wall)| (next_generation * WALL_COUNT + index, wall)),
-                    );
-                }
-            }
-        });
+        set_player.set(pos1);
+        update_walls_and_score(set_walls, set_score, pos1, &mut rng);
     };
 
     view! {
@@ -162,9 +173,7 @@ pub fn App() -> impl IntoView {
             >
                 <Wall x={child.1.0} y={child.1.1}/>
             </For>
-
             <Player pos=player/>
-
             <p style:position="absolute" style:bottom=0>{move || score}</p>
         </main>
     }
