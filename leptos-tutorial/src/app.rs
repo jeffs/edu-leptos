@@ -102,21 +102,25 @@ pub fn App() -> impl IntoView {
     let (score, set_score) = create_signal(0);
 
     let handle_keypress = move |ev: KeyboardEvent| {
-        let PlayerPos(mut x, mut y) = player();
+        let PlayerPos(x0, y0) = player();
 
-        match ev.key().as_str() {
-            "h" => x -= PLAYER_SPEED,
-            "j" => y += PLAYER_SPEED,
-            "k" => y -= PLAYER_SPEED,
-            "l" => x += PLAYER_SPEED,
-            "y" => (x, y) = (x - PLAYER_SPEED, y - PLAYER_SPEED),
-            "u" => (x, y) = (x + PLAYER_SPEED, y - PLAYER_SPEED),
-            "b" => (x, y) = (x - PLAYER_SPEED, y + PLAYER_SPEED),
-            "n" => (x, y) = (x + PLAYER_SPEED, y + PLAYER_SPEED),
-            _ => (),
+        let key = ev.key();
+        let x1 = match key.as_str() {
+            "h" | "y" | "b" => x0.saturating_sub(PLAYER_SPEED),
+            "l" | "u" | "n" => (x0 + PLAYER_SPEED).min(DUNGEON_WIDTH - PLAYER_WIDTH),
+            _ => x0,
+        };
+        let y1 = match key.as_str() {
+            "k" | "y" | "u" => y0.saturating_sub(PLAYER_SPEED),
+            "j" | "b" | "n" => (y0 + PLAYER_SPEED).min(DUNGEON_HEIGHT - PLAYER_HEIGHT),
+            _ => y0,
+        };
+
+        if (x0, y0) == (x1, y1) {
+            return;
         }
 
-        let pos = PlayerPos(x, y);
+        let pos = PlayerPos(x1, y1);
         set_player.set(pos);
         set_walls.update(|walls| {
             debug_assert!(!walls.is_empty());
